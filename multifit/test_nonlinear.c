@@ -17,8 +17,6 @@
  * Foundation, Inc., 51 Franklin Street, Fifth Floor, Boston, MA 02110-1301, USA.
  */
 
-/*#define DEBUG 1*/
-
 typedef struct
 {
   const char *name;
@@ -182,28 +180,6 @@ test_nonlinear(void)
   const double ftol = 0.0;
   size_t i, j;
 
-  /* test weighted nonlinear least squares */
-
-  /* internal weighting in _f and _df functions */
-  test_fdf(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
-           wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
-  test_fdf(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
-           wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
-  test_fdfridge(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
-                wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
-  test_fdfridge(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
-                wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
-
-  /* weighting through fdfsolver_wset */
-  test_fdf(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
-           wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
-  test_fdf(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
-           wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
-  test_fdfridge(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
-                wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
-  test_fdfridge(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
-                wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
-
   /* Nielsen tests */
   for (i = 0; test_fdf_nielsen[i] != NULL; ++i)
     {
@@ -308,6 +284,28 @@ test_nonlinear(void)
       test_fdf(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
                epsrel, 1.0, problem, NULL);
     }
+
+  /* test weighted nonlinear least squares */
+
+  /* internal weighting in _f and _df functions */
+  test_fdf(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
+           wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
+  test_fdf(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
+           wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
+  test_fdfridge(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
+                wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
+  test_fdfridge(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
+                wnlin_epsrel, 1.0, &wnlin_problem1, NULL);
+
+  /* weighting through fdfsolver_wset */
+  test_fdf(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
+           wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
+  test_fdf(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
+           wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
+  test_fdfridge(gsl_multifit_fdfsolver_lmsder, xtol, gtol, ftol,
+                wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
+  test_fdfridge(gsl_multifit_fdfsolver_lmniel, xtol, gtol, ftol,
+                wnlin_epsrel, 1.0, &wnlin_problem2, wnlin_W);
 }
 
 /*
@@ -363,18 +361,10 @@ test_fdf(const gsl_multifit_fdfsolver_type * T, const double xtol,
   else
     gsl_multifit_fdfsolver_set(s, fdf, x0);
 
-#ifdef DEBUG
-  printf("testing %s/%s...", sname, pname, x0_scale);
-#endif
-
   status = gsl_multifit_fdfsolver_driver(s, max_iter, xtol, gtol,
                                          ftol, &info);
   gsl_test(status, "%s/%s did not converge, status=%s",
            sname, pname, gsl_strerror(status));
-
-#ifdef DEBUG
-  printf("iter = %zu, info = %d\n", s->niter, info);
-#endif
 
   /* check solution */
   test_fdf_checksol(sname, pname, epsrel, s, problem);

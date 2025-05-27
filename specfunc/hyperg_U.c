@@ -21,6 +21,7 @@
 /* Author:  G. Jungman */
 
 #include <config.h>
+#include <stdlib.h>
 #include <gsl/gsl_math.h>
 #include <gsl/gsl_errno.h>
 #include <gsl/gsl_sf_exp.h>
@@ -35,9 +36,9 @@
 
 #define INT_THRESHOLD (1000.0*GSL_DBL_EPSILON)
 
-#define SERIES_EVAL_OK(a,b,x) ((fabs(a) < 5 && b < 5 && x < 2.0) || (fabs(a) <  10 && b < 10 && x < 1.0))
+#define SERIES_EVAL_OK(a,b,x) ((fabs((double) a) < 5 && b < 5 && x < 2.0) || (fabs((double) a) <  10 && b < 10 && x < 1.0))
 
-#define ASYMP_EVAL_OK(a,b,x) (GSL_MAX_DBL(fabs(a),1.0)*GSL_MAX_DBL(fabs(1.0+a-b),1.0) < 0.99*fabs(x))
+#define ASYMP_EVAL_OK(a,b,x) (GSL_MAX_DBL(fabs((double) a),1.0)*GSL_MAX_DBL(fabs(1.0+a-b),1.0) < 0.99*fabs(x))
 
 /* Log[U(a,2a,x)]
  * [Abramowitz+stegun, 13.6.21]
@@ -282,7 +283,7 @@ hyperg_U_finite_sum(int N, double a, double b, double x, double xeps,
 
     result->val  = sum_val * poch.val;
     result->err  = fabs(sum_val) * poch.err + sum_err * fabs(poch.val);
-    result->err += fabs(poch.val) * (fabs(N) + 2.0) * GSL_DBL_EPSILON * fabs(sum_val);
+    result->err += fabs(poch.val) * (abs(N) + 2.0) * GSL_DBL_EPSILON * fabs(sum_val);
     result->err += 2.0 * GSL_DBL_EPSILON * fabs(result->val);
     result->err *= 2.0; /* FIXME: fudge factor... why is the error estimate too small? */
     return stat_poch;
@@ -680,6 +681,18 @@ int
 hyperg_U_series(const double a, const double b, const double x, gsl_sf_result * result)
 {
   const double SQRT_EPS = M_SQRT2 * GSL_SQRT_DBL_EPSILON;
+double bint = ( b < 0.0 ? ceil(b-0.5) : floor(b+0.5) );
+  double beps  = b - bint;
+  double a_beps = a - beps;
+  double r_a_beps = floor(a_beps + 0.5);
+  double a_beps_int = ( fabs(a_beps - r_a_beps) < INT_THRESHOLD );
+/*  double a_b_1 = a-b+1;
+  double r_a_b_1 = floor(a_b_1+0.5);
+  double r_a_b_1_int = (fabs(a_b_1-r_a_b_1)< INT_THRESHOLD);
+  Check for (a-beps) being a member of -N; N being 0,1,... */
+  if (a_beps_int && a_beps <= 0)
+  { 	beps=beps - 1 + floor(a_beps);bint=bint + 1 - floor(a_beps);
+  }
 
   if(fabs(1.0 + a - b) < SQRT_EPS) {
     /* Original Comment: ALGORITHM IS BAD WHEN 1+A-B IS NEAR ZERO FOR SMALL X
@@ -694,9 +707,7 @@ hyperg_U_series(const double a, const double b, const double x, gsl_sf_result * 
     return stat_e;
   }
   else {
-    double bint = ( b < 0.0 ? ceil(b-0.5) : floor(b+0.5) );
-    double beps  = b - bint;
-    int N = bint;
+     int N = (int) bint;
     
     double lnx  = log(x);
     double xeps = exp(-beps*lnx);
@@ -711,7 +722,7 @@ hyperg_U_series(const double a, const double b, const double x, gsl_sf_result * 
     if(fabs(xeps-1.0) > 0.5 ) {
       stat_inf = hyperg_U_infinite_sum_stable(N, a, bint, b, beps, x, xeps, sum, result);
     } else if (1+a-b < 0 && 1+a-b==floor(1+a-b) && beps != 0) {
-      stat_inf = hyperg_U_infinite_sum_simple(N, a, bint, b, beps, x, xeps, sum, result);
+       stat_inf = hyperg_U_infinite_sum_simple(N, a, bint, b, beps, x, xeps, sum, result);
     } else {
       stat_inf = hyperg_U_infinite_sum_improved(N, a, bint, b, beps, x, xeps, sum, result);
     }
@@ -858,7 +869,7 @@ hyperg_U_int_bge1(const int a, const int b, const double x,
   }
   else if(a == -1) {
     result->val  = -b + x;
-    result->err  = 2.0 * GSL_DBL_EPSILON * (fabs(b) + fabs(x));
+    result->err  = 2.0 * GSL_DBL_EPSILON * (abs(b) + fabs(x));
     result->err += 2.0 * GSL_DBL_EPSILON * fabs(result->val);
     result->e10  = 0;
     return GSL_SUCCESS;
@@ -910,7 +921,7 @@ hyperg_U_int_bge1(const int a, const int b, const double x,
     lnm.val = scale_count*lnscale;
     lnm.err = 2.0 * GSL_DBL_EPSILON * fabs(lnm.val);
     y.val = Ua;
-    y.err = 4.0 * GSL_DBL_EPSILON * (fabs(a)+1.0) * fabs(Ua);
+    y.err = 4.0 * GSL_DBL_EPSILON * (abs(a)+1.0) * fabs(Ua);
     return gsl_sf_exp_mult_err_e10_e(lnm.val, lnm.err, y.val, y.err, result);
   }
   else if(b >= 2.0*a + x) {
@@ -944,7 +955,7 @@ hyperg_U_int_bge1(const int a, const int b, const double x,
     lnm.err = 2.0 * GSL_DBL_EPSILON * (fabs(lm) + fabs(scale_count*lnscale));
     y.val  = Ua;
     y.err  = fabs(r_Ua.err/r_Ua.val) * fabs(Ua);
-    y.err += 2.0 * GSL_DBL_EPSILON * (fabs(a) + 1.0) * fabs(Ua);
+    y.err += 2.0 * GSL_DBL_EPSILON * (abs(a) + 1.0) * fabs(Ua);
     stat_e = gsl_sf_exp_mult_err_e10_e(lnm.val, lnm.err, y.val, y.err, result);
     return GSL_ERROR_SELECT_2(stat_e, stat_1);
   }
@@ -995,7 +1006,7 @@ hyperg_U_int_bge1(const int a, const int b, const double x,
         double lnscl = -scale_count*log(scale_factor);
         double lnpre_val = lnU_target + lnscl;
         double lnpre_err = 2.0 * GSL_DBL_EPSILON * (fabs(lnU_target) + fabs(lnscl));
-        double oUa_err   = 2.0 * (fabs(a_target-a) + CF1_count + 1.0) * GSL_DBL_EPSILON * fabs(1.0/Ua);
+        double oUa_err   = 2.0 * (abs(a_target-a) + CF1_count + 1.0) * GSL_DBL_EPSILON * fabs(1.0/Ua);
         int stat_e = gsl_sf_exp_mult_err_e10_e(lnpre_val, lnpre_err,
                                                   1.0/Ua, oUa_err,
                                                   result);
@@ -1039,7 +1050,7 @@ hyperg_U_int_bge1(const int a, const int b, const double x,
           RESCALE_2(Ua,Uap1,scale_factor,scale_count_bck);
         }
         Ua1_bck_val = Ua;
-        Ua1_bck_err = 2.0 * GSL_DBL_EPSILON * (fabs(a1-a)+CF1_count+1.0) * fabs(Ua);
+        Ua1_bck_err = 2.0 * GSL_DBL_EPSILON * (abs(a1-a)+CF1_count+1.0) * fabs(Ua);
         stat_bck = stat_CF1;
       }
 
@@ -1105,7 +1116,7 @@ hyperg_U_int_bge1(const int a, const int b, const double x,
         }
         Ua1_for_val  = Ua;
         Ua1_for_err  = fabs(Ua) * fabs(r_Ua.err/r_Ua.val);
-        Ua1_for_err += 2.0 * GSL_DBL_EPSILON * (fabs(a1-a0)+1.0) * fabs(Ua1_for_val);
+        Ua1_for_err += 2.0 * GSL_DBL_EPSILON * (abs(a1-a0)+1.0) * fabs(Ua1_for_val);
       }
 
       /* Now do the matching to produce the final result.
@@ -1436,7 +1447,7 @@ hyperg_U_bge1(const double a, const double b, const double x,
 
       lnscale = log(scale_factor);
       lnm.val = lm_for + (scale_count_for - scale_count_bck)*lnscale;
-      lnm.err = 2.0 * GSL_DBL_EPSILON * (fabs(lm_for) + fabs(scale_count_for - scale_count_bck)*fabs(lnscale));
+      lnm.err = 2.0 * GSL_DBL_EPSILON * (fabs(lm_for) + abs(scale_count_for - scale_count_bck)*fabs(lnscale));
       y.val = GSL_SQRT_DBL_MIN*Ua1_for/Ua1_bck;
       y.err = 2.0 * GSL_DBL_EPSILON * (fabs(a-a0) + CF1_count + 1.0) * fabs(y.val);
       stat_e = gsl_sf_exp_mult_err_e10_e(lnm.val, lnm.err, y.val, y.err, result);
@@ -1611,7 +1622,25 @@ hyperg_U_negx (const double a, const double b, const double x, gsl_sf_result_e10
 static int
 hyperg_U_int_negx (const int a, const int b, const double x, gsl_sf_result_e10 * result)
 {
-  return hyperg_U_negx (a, b, x, result);
+/* Looking at the tests it seems that everything is handled correctly by hyperg_U_negx 
+except a<b<=0.  The b=1 case seems strange since the poch(1+a-b,-a) should blow up. 
+In order to do no (little) harm I fix up only a<b<=0 using DLMF 13.2.11.  These are the failing conditions
+*/
+  if (a<b && b<=0) 
+    {
+      gsl_sf_result_e10 r1;
+      double z21_z = pow(x, 1-b);
+      int status = hyperg_U_negx (1+a-b,2-b, x, &r1);
+      double res_tem=z21_z*r1.val;
+      double res_tem_err = fabs(z21_z)*r1.err;
+      result->val = res_tem;
+      result->err = res_tem_err;
+      return status;
+    }
+  else
+    {
+      return hyperg_U_negx (a, b, x, result);
+    }
 }  
 
 
@@ -1629,7 +1658,7 @@ gsl_sf_hyperg_U_int_e10_e(const int a, const int b, const double x,
   }
   else if (x == 0.0) {
     return hyperg_U_int_origin (a, b, result);
-  } else if (x < 0.0) {
+  } else if (x < 0.0)  {
     return hyperg_U_int_negx (a, b, x, result);
   }
   else {
@@ -1647,7 +1676,7 @@ gsl_sf_hyperg_U_int_e10_e(const int a, const int b, const double x,
       int stat_e;
       int stat_U = hyperg_U_int_bge1(ap, bp, x, &U);
       double ln_pre_val = (1.0-b)*ln_x;
-      double ln_pre_err = 2.0 * GSL_DBL_EPSILON * (fabs(b)+1.0) * fabs(ln_x);
+      double ln_pre_err = 2.0 * GSL_DBL_EPSILON * (abs(b)+1.0) * fabs(ln_x);
       ln_pre_err += 2.0 * GSL_DBL_EPSILON * fabs(1.0-b); /* error in log(x) */
       stat_e = gsl_sf_exp_mult_err_e10_e(ln_pre_val + U.e10*M_LN10, ln_pre_err,
                                             U.val, U.err,
@@ -1677,13 +1706,26 @@ gsl_sf_hyperg_U_e10_e(const double a, const double b, const double x,
     result->err = 0.0;
     result->e10 = 0;
     return GSL_SUCCESS;
-  } else if (x == 0.0) {
+  } 
+  else if (x == 0.0) {
     return hyperg_U_origin (a, b, result);
-  } else if (x < 0.0) {
-    return hyperg_U_negx (a, b, x, result);
+  } 
+  else if(a_integer && b == a + 1)
+/* This is DLMF 13.6.4 */
+   {
+     gsl_sf_result powx1N_1;
+     gsl_sf_pow_int_e(x, -a, &powx1N_1);
+     result->val = powx1N_1.val;
+     result->err = powx1N_1.err;
+     result->e10 = 0;
+     return GSL_SUCCESS;
+	
+   }  
+   else if(a_integer && b_integer) {
+     return gsl_sf_hyperg_U_int_e10_e(rinta, rintb, x, result);
   }
-  else if(a_integer && b_integer) {
-    return gsl_sf_hyperg_U_int_e10_e(rinta, rintb, x, result);
+  else if (x < 0.0) {
+    return hyperg_U_negx (a, b, x, result);
   }
   else {
     if(b >= 1.0) {
@@ -1714,7 +1756,7 @@ gsl_sf_hyperg_U_e10_e(const double a, const double b, const double x,
 int
 gsl_sf_hyperg_U_int_e(const int a, const int b, const double x, gsl_sf_result * result)
 {
-  gsl_sf_result_e10 re = {0};
+  gsl_sf_result_e10 re = {0, 0, 0};
   int stat_U = gsl_sf_hyperg_U_int_e10_e(a, b, x, &re);
   int stat_c = gsl_sf_result_smash_e(&re, result);
   return GSL_ERROR_SELECT_2(stat_c, stat_U);
@@ -1724,7 +1766,7 @@ gsl_sf_hyperg_U_int_e(const int a, const int b, const double x, gsl_sf_result * 
 int
 gsl_sf_hyperg_U_e(const double a, const double b, const double x, gsl_sf_result * result)
 {
-  gsl_sf_result_e10 re = {0};
+  gsl_sf_result_e10 re = {0, 0, 0};
   int stat_U = gsl_sf_hyperg_U_e10_e(a, b, x, &re);
   int stat_c = gsl_sf_result_smash_e(&re, result);
   return GSL_ERROR_SELECT_2(stat_c, stat_U);

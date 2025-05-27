@@ -347,13 +347,54 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
   {
     int status = 0;
+    TYPE (gsl_vector) * w0 = FUNCTION (gsl_vector, alloc) (N * stride);
+    QUALIFIED_VIEW(gsl_vector,view) view2 = FUNCTION (gsl_vector, subvector_with_stride) (w0, 0, stride, N);
+    TYPE (gsl_vector) * w = &view2.vector;
+
+    for (i = 0; i < N; i++)
+      {
+        FUNCTION (gsl_vector, set) (v, i, (ATOMIC) i);
+        FUNCTION (gsl_vector, set) (w, i, (ATOMIC) i);
+      }
+
+    FUNCTION (gsl_vector, axpby) ((ATOMIC)2, v, (ATOMIC)3, w);
+
+    for (i = 0; i < N; i++)
+      {
+        if (FUNCTION (gsl_vector, get) (w, i) != (ATOMIC) ((ATOMIC)i*(ATOMIC)2.0 + (ATOMIC)i*(ATOMIC)3.0))
+          status = 1;
+      }
+
+    TEST (status, "_axpby" DESC " by (2,3)") ;
+
+    for (i = 0; i < N; i++)
+      {
+        FUNCTION (gsl_vector, set) (v, i, (ATOMIC) i);
+        FUNCTION (gsl_vector, set) (w, i, (ATOMIC) i);
+      }
+
+    FUNCTION (gsl_vector, axpby) ((ATOMIC)2, v, (ATOMIC)0, w);
+
+    for (i = 0; i < N; i++)
+      {
+        if (FUNCTION (gsl_vector, get) (w, i) != (ATOMIC) ((ATOMIC)i*(ATOMIC)2.0))
+          status = 1;
+      }
+
+    TEST (status, "_axpby" DESC " by (2,0)") ;
+
+    FUNCTION (gsl_vector, free) (w0);
+  }
+
+  {
+    int status = 0;
 
     for (i = 0; i < N; i++)
       {
         FUNCTION (gsl_vector, set) (v, i, (ATOMIC) i);
       }
 
-    FUNCTION (gsl_vector, scale) (v, 2.0);
+    FUNCTION (gsl_vector, scale) (v, (ATOMIC)2.0);
 
     for (i = 0; i < N; i++)
       {
@@ -579,7 +620,6 @@ FUNCTION (test, func) (size_t stride, size_t N)
 
   }
 
-
   FUNCTION (gsl_vector, free) (v0);      /* free whatever is in v */
 }
 
@@ -590,11 +630,16 @@ FUNCTION (test, ops) (size_t stride1, size_t stride2, size_t N)
   TYPE (gsl_vector) * a = FUNCTION (create, vector) (stride1, N);
   TYPE (gsl_vector) * b = FUNCTION (create, vector) (stride2, N);
   TYPE (gsl_vector) * v = FUNCTION (create, vector) (stride1, N);
+  BASE exact_sum_a = (BASE) 0, exact_sum_b = (BASE) 0;
   
   for (i = 0; i < N; i++)
     {
-      FUNCTION (gsl_vector, set) (a, i, (BASE)(3 + i));
-      FUNCTION (gsl_vector, set) (b, i, (BASE)(3 + 2 * i));
+      BASE ai = (BASE)(3 + i);
+      BASE bi = (BASE)(3 + 2 * i);
+      FUNCTION (gsl_vector, set) (a, i, ai);
+      FUNCTION (gsl_vector, set) (b, i, bi);
+      exact_sum_a += ai;
+      exact_sum_b += bi;
     }
   
   {
@@ -698,10 +743,26 @@ FUNCTION (test, ops) (size_t stride1, size_t stride2, size_t N)
         BASE x = FUNCTION(gsl_vector,get) (a,i);
         BASE y = FUNCTION(gsl_vector,get) (b,i);
         BASE z = x / y;
-        if (fabs(r - z) > 2 * GSL_FLT_EPSILON * fabs(z))
+        if (ABS(r - z) > 2 * GSL_FLT_EPSILON * ABS(z))
           status = 1;
       }
     TEST2 (status, "_div division");
+  }
+
+  {
+    int status;
+    BASE sum_a = FUNCTION(gsl_vector, sum) (a);
+    BASE sum_b = FUNCTION(gsl_vector, sum) (b);
+
+    status = 0;
+    if (ABS(sum_a - exact_sum_a) > GSL_FLT_EPSILON)
+      status = 1;
+    gsl_test (status, NAME (gsl_vector) "_sum a");
+
+    status = 0;
+    if (ABS(sum_b - exact_sum_b) > GSL_FLT_EPSILON)
+      status = 1;
+    gsl_test (status, NAME (gsl_vector) "_sum b");
   }
 
   FUNCTION(gsl_vector, free) (a);
@@ -715,18 +776,17 @@ FUNCTION (test, file) (size_t stride, size_t N)
 {
   TYPE (gsl_vector) * v = FUNCTION (create, vector) (stride, N);
   TYPE (gsl_vector) * w = FUNCTION (create, vector) (stride, N);
-
   size_t i;
 
-  char filename[] = "test.XXXXXX";
-#if !defined( _MSC_VER )
-  int fd = mkstemp(filename);
+#ifdef NO_INLINE
+  char filename[] = "test_static.dat";
 #else
-  char * fd = _mktemp(filename);
-#  define fdopen fopen
+  char filename[] = "test.dat";
 #endif
+
   {
-    FILE *f = fdopen (fd, "wb");
+    /* write file */
+    FILE *f = fopen(filename, "wb");
 
     for (i = 0; i < N; i++)
       {
@@ -735,11 +795,12 @@ FUNCTION (test, file) (size_t stride, size_t N)
 
     FUNCTION (gsl_vector, fwrite) (f, v);
 
-    fclose (f);
+    fclose(f);
   }
 
   {
-    FILE *f = fopen (filename, "rb");
+    /* read file */
+    FILE *f = fopen(filename, "rb");
 
     FUNCTION (gsl_vector, fread) (f, w);
 
@@ -752,10 +813,8 @@ FUNCTION (test, file) (size_t stride, size_t N)
 
     TEST (status, "_write and read");
 
-    fclose (f);
+    fclose(f);
   }
-
-  unlink(filename);
 
   FUNCTION (gsl_vector, free) (v);      /* free whatever is in v */
   FUNCTION (gsl_vector, free) (w);      /* free whatever is in w */
@@ -769,18 +828,17 @@ FUNCTION (test, text) (size_t stride, size_t N)
 {
   TYPE (gsl_vector) * v = FUNCTION (create, vector) (stride, N);
   TYPE (gsl_vector) * w = FUNCTION (create, vector) (stride, N);
-
   size_t i;
 
-  char filename[] = "test.XXXXXX";
-#if !defined( _MSC_VER )
-   int fd = mkstemp(filename);
+#ifdef NO_INLINE
+  char filename[] = "test_static.dat";
 #else
-   char * fd = _mktemp(filename);
-#  define fdopen fopen
+  char filename[] = "test.dat";
 #endif
+
   {
-    FILE *f = fdopen (fd, "w");
+    /* write file */
+    FILE *f = fopen(filename, "w");
 
     for (i = 0; i < N; i++)
       {
@@ -789,11 +847,12 @@ FUNCTION (test, text) (size_t stride, size_t N)
 
     FUNCTION (gsl_vector, fprintf) (f, v, OUT_FORMAT);
 
-    fclose (f);
+    fclose(f);
   }
 
   {
-    FILE *f = fopen (filename, "r");
+    /* read file */
+    FILE *f = fopen(filename, "r");
 
     FUNCTION (gsl_vector, fscanf) (f, w);
 
@@ -808,8 +867,6 @@ FUNCTION (test, text) (size_t stride, size_t N)
 
     fclose (f);
   }
-
-  unlink(filename);
 
   FUNCTION (gsl_vector, free) (v);
   FUNCTION (gsl_vector, free) (w);
@@ -855,7 +912,24 @@ FUNCTION (test, trap) (size_t stride, size_t N)
   FUNCTION (gsl_vector, free) (v);      /* free whatever is in v */
 }
 
+void
+FUNCTION (test, alloc_zero_length) (void)
+{
+  TYPE (gsl_vector) * b = FUNCTION (gsl_vector, alloc) (0);
 
+  gsl_test (b == 0, NAME (gsl_vector) "_alloc permits zero length");
+  gsl_test (b->size != 0, NAME (gsl_vector) "_alloc reflects zero length");
 
+  FUNCTION (gsl_vector, free) (b);
+}
 
+void
+FUNCTION (test, calloc_zero_length) (void)
+{
+  TYPE (gsl_vector) * b = FUNCTION (gsl_vector, calloc) (0);
 
+  gsl_test (b == 0, NAME (gsl_vector) "_calloc permits zero length");
+  gsl_test (b->size != 0, NAME (gsl_vector) "_calloc reflects zero length");
+
+  FUNCTION (gsl_vector, free) (b);
+}

@@ -89,6 +89,7 @@ gsl_multifit_robust_alloc(const gsl_multifit_robust_type *T,
   w->multifit_p = gsl_multifit_linear_alloc(n, p);
   if (w->multifit_p == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for multifit_linear struct",
                     GSL_ENOMEM, 0);
     }
@@ -96,6 +97,7 @@ gsl_multifit_robust_alloc(const gsl_multifit_robust_type *T,
   w->r = gsl_vector_alloc(n);
   if (w->r == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for residuals",
                     GSL_ENOMEM, 0);
     }
@@ -103,18 +105,21 @@ gsl_multifit_robust_alloc(const gsl_multifit_robust_type *T,
   w->weights = gsl_vector_alloc(n);
   if (w->weights == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for weights", GSL_ENOMEM, 0);
     }
 
   w->c_prev = gsl_vector_alloc(p);
   if (w->c_prev == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for c_prev", GSL_ENOMEM, 0);
     }
 
   w->resfac = gsl_vector_alloc(n);
   if (w->resfac == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for residual factors",
                     GSL_ENOMEM, 0);
     }
@@ -122,30 +127,35 @@ gsl_multifit_robust_alloc(const gsl_multifit_robust_type *T,
   w->psi = gsl_vector_alloc(n);
   if (w->psi == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for psi", GSL_ENOMEM, 0);
     }
 
   w->dpsi = gsl_vector_alloc(n);
   if (w->dpsi == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for dpsi", GSL_ENOMEM, 0);
     }
 
   w->QSI = gsl_matrix_alloc(p, p);
   if (w->QSI == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for QSI", GSL_ENOMEM, 0);
     }
 
   w->D = gsl_vector_alloc(p);
   if (w->D == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for D", GSL_ENOMEM, 0);
     }
 
   w->workn = gsl_vector_alloc(n);
   if (w->workn == 0)
     {
+      gsl_multifit_robust_free(w);
       GSL_ERROR_VAL("failed to allocate space for workn", GSL_ENOMEM, 0);
     }
 
@@ -273,7 +283,9 @@ gsl_multifit_robust_weights(const gsl_vector *r, gsl_vector *wts,
 
       /* scale residuals by sigma and tuning factor */
       gsl_vector_memcpy(wts, r);
-      gsl_vector_scale(wts, 1.0 / (sigma * w->tune));
+
+      if (sigma > 0.0)
+        gsl_vector_scale(wts, 1.0 / (sigma * w->tune));
 
       /* compute weights in-place */
       s = w->type->wfun(wts, wts);
@@ -441,7 +453,7 @@ gsl_multifit_robust(const gsl_matrix * X,
         w->stats.Rsq = 1.0 - ss_err / ss_tot;
 
         /* compute adjusted R^2 */
-        w->stats.adj_Rsq = 1.0 - (1.0 - w->stats.Rsq) * (n - 1.0) / dof;
+        w->stats.adj_Rsq = 1.0 - (1.0 - w->stats.Rsq) * ((double)n - 1.0) / dof;
 
         /* compute rmse */
         w->stats.rmse = sqrt(ss_err / dof);
@@ -700,8 +712,8 @@ robust_sigma(const double s_ols, const double s_rob,
              gsl_multifit_robust_workspace *w)
 {
   double sigma;
-  const size_t p = w->p;
-  const size_t n = w->n;
+  const double p = (double) w->p;
+  const double n = (double) w->n;
 
   /* see DuMouchel and O'Brien, sec 4.1 */
   sigma = GSL_MAX(s_rob,
@@ -726,7 +738,7 @@ static int
 robust_covariance(const double sigma, gsl_matrix *cov,
                   gsl_multifit_robust_workspace *w)
 {
-  int s = 0;
+  int status = 0;
   const size_t p = w->p;
   const double s2 = sigma * sigma;
   size_t i, j;
@@ -753,5 +765,5 @@ robust_covariance(const double sigma, gsl_matrix *cov,
         }
     }
 
-  return s;
+  return status;
 } /* robust_covariance() */

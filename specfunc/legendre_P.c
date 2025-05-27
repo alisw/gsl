@@ -1,10 +1,10 @@
-/* legendre_P.c
+/* specfunc/legendre_P.c
  * 
  * Copyright (C) 2009-2013 Patrick Alken
  * 
  * This program is free software; you can redistribute it and/or modify
  * it under the terms of the GNU General Public License as published by
- * the Free Software Foundation; either version 2 of the License, or (at
+ * the Free Software Foundation; either version 3 of the License, or (at
  * your option) any later version.
  * 
  * This program is distributed in the hope that it will be useful, but
@@ -81,19 +81,7 @@ gsl_sf_legendre_array_n(const size_t lmax)
   size_t nsqrt = 2 * lmax + 2; /* extra room to precompute sqrt factors */
 
   return (nlm + nsqrt);
-} /* gsl_sf_legendre_array_n() */
-
-/*
-gsl_sf_legendre_array_index()
-This routine computes the index into a result_array[] corresponding
-to a given (l,m)
-*/
-
-size_t
-gsl_sf_legendre_array_index(const size_t l, const size_t m)
-{
-  return (l * (l + 1) / 2 + m);
-} /* gsl_sf_legendre_array_index() */
+}
 
 /*********************************************************
  *                 INTERNAL ROUTINES                     *

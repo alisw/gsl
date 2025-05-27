@@ -1,9 +1,0 @@
-.deps
-*.la
-.libs
-*.lo
-Makefile
-Makefile.in
-siman_test
-siman_tsp
-test

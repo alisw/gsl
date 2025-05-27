@@ -125,11 +125,12 @@ sc_control_hadjust (void *vstate, size_t dim, unsigned int ord,
     }
   else if (rmax < 0.5)
     {
-      /* increase step, no more than factor of 5 */
+      /* increase step, no more than factor of maxscale */
       double r = S / pow (rmax, 1.0 / (ord + 1.0));
+      const double maxscale = 4.9;
 
-      if (r > 5.0)
-        r = 5.0;
+      if (r > maxscale)
+        r = maxscale;
 
       if (r < 1.0)              /* don't allow any decrease caused by S<1 */
         r = 1.0;
@@ -162,7 +163,7 @@ sc_control_errlevel (void *vstate, const double y, const double dydt,
 
   if (*errlev <= 0.0)
     {
-      GSL_ERROR_NULL ("errlev <= zero", GSL_ESANITY);
+      GSL_ERROR ("errlev <= zero", GSL_ESANITY);
     }
 
   return GSL_SUCCESS;

@@ -257,9 +257,12 @@ lmniel_iterate(void *vstate, const gsl_vector *swts,
   int foundstep = 0;                          /* found step dx */
 
   /* compute A = J^T J */
-  status = gsl_blas_dgemm(CblasTrans, CblasNoTrans, 1.0, J, J, 0.0, A);
+  status = gsl_blas_dsyrk(CblasLower, CblasTrans, 1.0, J, 0.0, A);
   if (status)
     return status;
+
+  /* copy lower triangle to upper */
+  gsl_matrix_transpose_tricpy(CblasLower, CblasUnit, A, A);
 
 #if SCALE
   lmniel_update_diag(J, diag);
@@ -324,7 +327,7 @@ lmniel_iterate(void *vstate, const gsl_vector *swts,
           long nu2;
 
           /* step did not reduce error, reject step */
-          state->mu *= state->nu;
+          state->mu *= (double) state->nu;
           nu2 = state->nu << 1; /* 2*nu */
           if (nu2 <= state->nu)
             {

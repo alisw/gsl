@@ -37,8 +37,14 @@ driver_alloc (const gsl_odeiv2_system * sys, const double hstart,
      another function.
    */
 
-  gsl_odeiv2_driver *state =
-    (gsl_odeiv2_driver *) malloc (sizeof (gsl_odeiv2_driver));
+  gsl_odeiv2_driver *state;
+
+  if (sys == NULL)
+    {
+      GSL_ERROR_NULL ("gsl_odeiv2_system must be defined", GSL_EINVAL);
+    }
+
+  state = (gsl_odeiv2_driver *) calloc (1, sizeof (gsl_odeiv2_driver));
 
   if (state == NULL)
     {
@@ -46,16 +52,12 @@ driver_alloc (const gsl_odeiv2_system * sys, const double hstart,
                       GSL_ENOMEM);
     }
 
-  if (sys == NULL)
-    {
-      GSL_ERROR_NULL ("gsl_odeiv2_system must be defined", GSL_EINVAL);
-    }
-
   {
     const size_t dim = sys->dimension;
 
     if (dim == 0)
       {
+        gsl_odeiv2_driver_free(state);
         GSL_ERROR_NULL
           ("gsl_odeiv2_system dimension must be a positive integer",
            GSL_EINVAL);
@@ -67,7 +69,7 @@ driver_alloc (const gsl_odeiv2_system * sys, const double hstart,
 
     if (state->s == NULL)
       {
-        free (state);
+        gsl_odeiv2_driver_free(state);
         GSL_ERROR_NULL ("failed to allocate step object", GSL_ENOMEM);
       }
 
@@ -76,8 +78,7 @@ driver_alloc (const gsl_odeiv2_system * sys, const double hstart,
 
   if (state->e == NULL)
     {
-      gsl_odeiv2_step_free (state->s);
-      free (state);
+      gsl_odeiv2_driver_free(state);
       GSL_ERROR_NULL ("failed to allocate evolve object", GSL_ENOMEM);
     }
 
@@ -87,6 +88,7 @@ driver_alloc (const gsl_odeiv2_system * sys, const double hstart,
     }
   else
     {
+      gsl_odeiv2_driver_free(state);
       GSL_ERROR_NULL ("invalid hstart", GSL_EINVAL);
     }
 
@@ -108,7 +110,7 @@ gsl_odeiv2_driver_set_hmin (gsl_odeiv2_driver * d, const double hmin)
 
   if ((fabs (hmin) > fabs (d->h)) || (fabs (hmin) > d->hmax))
     {
-      GSL_ERROR_NULL ("hmin <= fabs(h) <= hmax required", GSL_EINVAL);
+      GSL_ERROR ("hmin <= fabs(h) <= hmax required", GSL_EINVAL);
     }
 
   d->hmin = fabs (hmin);
@@ -124,7 +126,7 @@ gsl_odeiv2_driver_set_hmax (gsl_odeiv2_driver * d, const double hmax)
 
   if ((fabs (hmax) < fabs (d->h)) || (fabs (hmax) < d->hmin))
     {
-      GSL_ERROR_NULL ("hmin <= fabs(h) <= hmax required", GSL_EINVAL);
+      GSL_ERROR ("hmin <= fabs(h) <= hmax required", GSL_EINVAL);
     }
 
   if (hmax > 0.0 || hmax < 0.0)
@@ -133,7 +135,7 @@ gsl_odeiv2_driver_set_hmax (gsl_odeiv2_driver * d, const double hmax)
     }
   else
     {
-      GSL_ERROR_NULL ("invalid hmax", GSL_EINVAL);
+      GSL_ERROR ("invalid hmax", GSL_EINVAL);
     }
 
   return GSL_SUCCESS;
@@ -349,7 +351,7 @@ gsl_odeiv2_driver_apply (gsl_odeiv2_driver * d, double *t,
 
   if (sign * (t1 - *t) < 0.0)
     {
-      GSL_ERROR_NULL
+      GSL_ERROR
         ("integration limits and/or step direction not consistent",
          GSL_EINVAL);
     }
@@ -461,7 +463,7 @@ gsl_odeiv2_driver_reset_hstart (gsl_odeiv2_driver * d, const double hstart)
 
   if ((d->hmin > fabs (hstart)) || (fabs (hstart) > d->hmax))
     {
-      GSL_ERROR_NULL ("hmin <= fabs(h) <= hmax required", GSL_EINVAL);
+      GSL_ERROR ("hmin <= fabs(h) <= hmax required", GSL_EINVAL);
     }
 
   if (hstart > 0.0 || hstart < 0.0)
@@ -470,7 +472,7 @@ gsl_odeiv2_driver_reset_hstart (gsl_odeiv2_driver * d, const double hstart)
     }
   else
     {
-      GSL_ERROR_NULL ("invalid hstart", GSL_EINVAL);
+      GSL_ERROR ("invalid hstart", GSL_EINVAL);
     }
 
   return GSL_SUCCESS;
@@ -479,12 +481,14 @@ gsl_odeiv2_driver_reset_hstart (gsl_odeiv2_driver * d, const double hstart)
 void
 gsl_odeiv2_driver_free (gsl_odeiv2_driver * state)
 {
-  if (state->c != NULL)
-    {
-      gsl_odeiv2_control_free (state->c);
-    }
+  if (state->c)
+    gsl_odeiv2_control_free (state->c);
 
-  gsl_odeiv2_evolve_free (state->e);
-  gsl_odeiv2_step_free (state->s);
+  if (state->e)
+    gsl_odeiv2_evolve_free (state->e);
+
+  if (state->s)
+    gsl_odeiv2_step_free (state->s);
+
   free (state);
 }

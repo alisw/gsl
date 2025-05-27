@@ -1,22 +1,26 @@
 #include <config.h>
 #include <gsl/gsl_vector.h>
 #include <gsl/gsl_errno.h>
+#include <gsl/gsl_blas.h>
 
 #define BASE_GSL_COMPLEX_LONG
 #include "templates_on.h"
 #include "copy_source.c"
+#include "copy_complex_source.c"
 #include "templates_off.h"
 #undef  BASE_GSL_COMPLEX_LONG
 
 #define BASE_GSL_COMPLEX
 #include "templates_on.h"
 #include "copy_source.c"
+#include "copy_complex_source.c"
 #include "templates_off.h"
 #undef  BASE_GSL_COMPLEX
 
 #define BASE_GSL_COMPLEX_FLOAT
 #include "templates_on.h"
 #include "copy_source.c"
+#include "copy_complex_source.c"
 #include "templates_off.h"
 #undef  BASE_GSL_COMPLEX_FLOAT
 

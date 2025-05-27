@@ -1,21 +1,213 @@
 ## Process this file with automake to produce Makefile.in
 
-info_TEXINFOS = gsl-ref.texi
+SUBDIRS = . examples
+
+#info_TEXINFOS = gsl-ref.texi
 noinst_TEXINFOS = gsl-design.texi
-gsl_ref_TEXINFOS = err.texi cblas.texi blas.texi min.texi fft.texi rng.texi randist.texi roots.texi rstat.texi statistics.texi specfunc.texi specfunc-airy.texi specfunc-bessel.texi specfunc-clausen.texi specfunc-coulomb.texi specfunc-coupling.texi specfunc-dawson.texi specfunc-debye.texi specfunc-dilog.texi specfunc-elementary.texi specfunc-ellint.texi specfunc-elljac.texi specfunc-erf.texi specfunc-exp.texi specfunc-expint.texi specfunc-fermi-dirac.texi specfunc-gamma.texi specfunc-gegenbauer.texi specfunc-hyperg.texi specfunc-lambert.texi specfunc-laguerre.texi specfunc-legendre.texi specfunc-log.texi specfunc-mathieu.texi specfunc-pow-int.texi specfunc-psi.texi specfunc-synchrotron.texi specfunc-transport.texi specfunc-trig.texi specfunc-zeta.texi siman.texi vectors.texi debug.texi histogram.texi ode-initval.texi integration.texi ieee754.texi montecarlo.texi sum.texi intro.texi usage.texi dwt.texi dht.texi interp.texi poly.texi linalg.texi eigen.texi multiroots.texi sort.texi permutation.texi combination.texi multiset.texi complex.texi math.texi fitting.texi multifit.texi const.texi ntuple.texi diff.texi qrng.texi cheb.texi multimin.texi gpl.texi fdl.texi autoconf.texi bspline.texi spblas.texi spmatrix.texi splinalg.texi
 
 man_MANS = gsl.3 gsl-config.1 gsl-randist.1 gsl-histogram.1
 
-figures = multimin.eps siman-test.eps siman-energy.eps 12-cities.eps initial-route.eps final-route.eps fft-complex-radix2-f.eps fft-complex-radix2-t.eps fft-complex-radix2.eps fft-real-mixedradix.eps roots-bisection.eps roots-false-position.eps roots-newtons-method.eps roots-secant-method.eps histogram.eps histogram2d.eps min-interval.eps fit-wlinear.eps fit-wlinear2.eps fit-exp.eps ntuple.eps qrng.eps cheb.eps vdp.eps interp2.eps rand-beta.tex rand-binomial.tex rand-cauchy.tex rand-chisq.tex rand-erlang.tex rand-exponential.tex rand-fdist.tex rand-flat.tex rand-gamma.tex rand-gaussian.tex rand-geometric.tex rand-laplace.tex rand-logarithmic.tex rand-logistic.tex rand-lognormal.tex rand-pareto.tex rand-poisson.tex rand-hypergeometric.tex rand-nbinomial.tex rand-pascal.tex rand-bivariate-gaussian.tex rand-rayleigh.tex rand-rayleigh-tail.tex rand-tdist.tex rand-weibull.tex random-walk.tex randplots.gnp rand-exppow.tex rand-levy.tex rand-levyskew.tex rand-gumbel.tex rand-bernoulli.tex rand-gaussian-tail.tex rand-gumbel1.tex rand-gumbel2.tex landau.dat rand-landau.tex dwt-orig.eps dwt-samp.eps interpp2.eps bspline.eps robust.eps sparse_poisson.eps interp_compare.eps
+figures =                              \
+  images/bspline_deriv.png             \
+  images/bspline_gram1.png             \
+  images/bspline_gram2.png             \
+  images/bspline_interp.png            \
+  images/bspline_knots.png             \
+  images/bspline_lsbreak.png           \
+  images/bspline_lsend.png             \
+  images/bspline_lsorder.png           \
+  images/bspline_per.png               \
+  images/bspline_proj.png              \
+  images/cheb.png                      \
+  images/dwt.png                       \
+  images/fft-complex-radix2.png        \
+  images/fft-real-mixedradix.png       \
+  images/filt_edge.png                 \
+  images/fit-exp.png                   \
+  images/fit-wlinear2.png              \
+  images/fit-wlinear.png               \
+  images/gaussfilt.png                 \
+  images/gaussfilt2.png                \
+  images/histogram.png                 \
+  images/histogram2d.png               \
+  images/impulse.png                   \
+  images/interp2d.png                  \
+  images/interp_compare.png            \
+  images/interp.png                    \
+  images/interpp.png                   \
+  images/min-interval.png              \
+  images/movstat1.png                  \
+  images/movstat2.png                  \
+  images/movstat3.png                  \
+  images/multilarge.png                \
+  images/multimin.png                  \
+  images/nlfit2b.png                   \
+  images/nlfit2.png                    \
+  images/nlfit3.png                    \
+  images/ntuple.png                    \
+  images/ode-vdp.png                   \
+  images/qrng.png                      \
+  images/rand-bernoulli.png            \
+  images/rand-beta.png                 \
+  images/rand-binomial.png             \
+  images/rand-bivariate-gaussian.png   \
+  images/rand-cauchy.png               \
+  images/rand-chisq.png                \
+  images/rand-erlang.png               \
+  images/rand-exponential.png          \
+  images/rand-exppow.png               \
+  images/rand-fdist.png                \
+  images/rand-flat.png                 \
+  images/rand-gamma.png                \
+  images/rand-gaussian.png             \
+  images/rand-gaussian-tail.png        \
+  images/rand-geometric.png            \
+  images/rand-gumbel1.png              \
+  images/rand-gumbel2.png              \
+  images/rand-hypergeometric.png       \
+  images/rand-landau.png               \
+  images/rand-laplace.png              \
+  images/rand-levy.png                 \
+  images/rand-levyskew.png             \
+  images/rand-logarithmic.png          \
+  images/rand-logistic.png             \
+  images/rand-lognormal.png            \
+  images/rand-nbinomial.png            \
+  images/random-walk.png               \
+  images/rand-pareto.png               \
+  images/rand-pascal.png               \
+  images/rand-poisson.png              \
+  images/rand-rayleigh.png             \
+  images/rand-rayleigh-tail.png        \
+  images/rand-tdist.png                \
+  images/rand-weibull.png              \
+  images/regularized2.png              \
+  images/regularized.png               \
+  images/robust.png                    \
+  images/siman-12-cities.png           \
+  images/siman-energy.png              \
+  images/siman-final-route.png         \
+  images/siman-initial-route.png       \
+  images/siman-test.png                \
+  images/sparse_poisson.png
 
-examples_src = examples/blas.c examples/block.c examples/cblas.c examples/cdf.c examples/cheb.c examples/combination.c examples/multiset.c examples/const.c examples/demo_fn.c examples/diff.c examples/eigen.c examples/fft.c examples/fftmr.c examples/fftreal.c examples/fitting.c examples/fitting2.c examples/fitting3.c examples/histogram.c examples/histogram2d.c examples/ieee.c examples/ieeeround.c examples/integration.c examples/interp.c examples/intro.c examples/linalglu.c examples/matrix.c examples/matrixw.c examples/min.c examples/monte.c examples/ntupler.c examples/ntuplew.c examples/ode-initval.c examples/odefixed.c examples/permseq.c examples/permshuffle.c examples/polyroots.c examples/qrng.c examples/randpoisson.c examples/randwalk.c examples/rng.c examples/rngunif.c examples/robfit.c examples/rootnewt.c examples/roots.c examples/siman.c examples/sortsmall.c examples/specfun.c examples/specfun_e.c examples/rstat.c examples/rquantile.c examples/stat.c examples/statsort.c examples/sum.c examples/vector.c examples/vectorr.c examples/vectorview.c examples/vectorw.c examples/demo_fn.h examples/dwt.c examples/expfit.c examples/nlfit.c examples/interpp.c examples/eigen_nonsymm.c examples/bspline.c examples/multimin.c examples/multiminfn.c examples/nmsimplex.c examples/ode-initval-low-level.c examples/poisson.c examples/interp_compare.c examples/interp_compare.gp
+rst_files =                            \
+  autoconf.rst                         \
+  blas.rst                             \
+  bspline.rst                          \
+  cblas.rst                            \
+  cheb.rst                             \
+  combination.rst                      \
+  complex.rst                          \
+  const.rst                            \
+  contrib.rst                          \
+  debug.rst                            \
+  dht.rst                              \
+  diff.rst                             \
+  dwt.rst                              \
+  eigen.rst                            \
+  err.rst                              \
+  fdl.rst                              \
+  fft.rst                              \
+  filter.rst                           \
+  gpl.rst                              \
+  histogram.rst                        \
+  ieee754.rst                          \
+  include.rst                          \
+  index.rst                            \
+  integration.rst                      \
+  interp.rst                           \
+  intro.rst                            \
+  linalg.rst                           \
+  lls.rst                              \
+  math.rst                             \
+  min.rst                              \
+  montecarlo.rst                       \
+  movstat.rst                          \
+  multimin.rst                         \
+  multiroots.rst                       \
+  multiset.rst                         \
+  nls.rst                              \
+  ntuple.rst                           \
+  ode-initval.rst                      \
+  permutation.rst                      \
+  poly.rst                             \
+  qrng.rst                             \
+  randist.rst                          \
+  rng.rst                              \
+  roots.rst                            \
+  rstat.rst                            \
+  siman.rst                            \
+  sort.rst                             \
+  spblas.rst                           \
+  specfunc-airy.rst                    \
+  specfunc-bessel.rst                  \
+  specfunc-clausen.rst                 \
+  specfunc-coulomb.rst                 \
+  specfunc-coupling.rst                \
+  specfunc-dawson.rst                  \
+  specfunc-debye.rst                   \
+  specfunc-dilog.rst                   \
+  specfunc-elementary.rst              \
+  specfunc-ellint.rst                  \
+  specfunc-elljac.rst                  \
+  specfunc-erf.rst                     \
+  specfunc-expint.rst                  \
+  specfunc-exp.rst                     \
+  specfunc-fermi-dirac.rst             \
+  specfunc-gamma.rst                   \
+  specfunc-gegenbauer.rst              \
+  specfunc-hermite.rst                 \
+  specfunc-hyperg.rst                  \
+  specfunc-laguerre.rst                \
+  specfunc-lambert.rst                 \
+  specfunc-legendre.rst                \
+  specfunc-log.rst                     \
+  specfunc-mathieu.rst                 \
+  specfunc-pow-int.rst                 \
+  specfunc-psi.rst                     \
+  specfunc.rst                         \
+  specfunc-synchrotron.rst             \
+  specfunc-transport.rst               \
+  specfunc-trig.rst                    \
+  specfunc-zeta.rst                    \
+  splinalg.rst                         \
+  spmatrix.rst                         \
+  statistics.rst                       \
+  sum.rst                              \
+  usage.rst                            \
+  vectors.rst
 
-examples_out = examples/blas.out examples/block.out examples/cblas.out examples/cdf.out examples/combination.out examples/multiset.out examples/const.out examples/diff.out examples/integration.out examples/intro.out examples/linalglu.out examples/min.out examples/polyroots.out examples/randpoisson.2.out examples/randpoisson.out examples/rng.out examples/rngunif.2.out examples/rngunif.out examples/sortsmall.out examples/specfun.out examples/specfun_e.out examples/rquantile.out examples/stat.out examples/statsort.out examples/sum.out examples/vectorview.out examples/ecg.dat examples/dwt.dat examples/multimin.out examples/nmsimplex.out
+static_files =                         \
+  _static/fdl.txt                      \
+	_static/gpl.txt
 
-noinst_DATA = $(examples_src) $(examples_out) $(figures)
+noinst_DATA = $(figures) $(rst_files) $(static_files)
 
-EXTRA_DIST = $(man_MANS) $(noinst_DATA) gsl-design.texi fftalgorithms.tex fftalgorithms.bib algorithm.sty algorithmic.sty calc.sty statnotes.tex
+EXTRA_DIST = $(man_MANS) $(noinst_DATA) gsl-design.texi gsl-ref.info conf.py
 
-# pdf disabled, use postscript and ps2pdf
-.PHONY: pdf
-pdf:
+SPHINX_OPTS        =
+SPHINX_BUILD       = sphinx-build
+SPHINX_SOURCEDIR   = .
+SPHINX_BUILDDIR    = _build
+
+# targets supported by sphinx
+SPHINX_TARGETS = html dirhtml singlehtml pickle json htmlhelp qthelp devhelp epub latex latexpdf latexpdfja text man texinfo gettext changes xml pseudoxml linkcheck doctest coverage
+
+$(SPHINX_TARGETS) :
+	@$(SPHINX_BUILD) -M $@ "$(SPHINX_SOURCEDIR)" "$(SPHINX_BUILDDIR)" $(SPHINX_OPTS) $(O)
+
+# special case info target
+info:
+	@$(SPHINX_BUILD) -M $@ "$(SPHINX_SOURCEDIR)" "$(SPHINX_BUILDDIR)" $(SPHINX_OPTS) $(O)
+	cp "$(SPHINX_BUILDDIR)/texinfo/gsl-ref.info" .
+
+install-data-local: $(srcdir)/gsl-ref.info
+	$(MKDIR_P) "$(DESTDIR)$(infodir)"
+	$(INSTALL_DATA) $(srcdir)/gsl-ref.info $(DESTDIR)$(infodir)
+
+uninstall-local:
+	rm -f "$(DESTDIR)$(infodir)/gsl-ref.info"
+
+clean-local:
+	rm -rf "$(SPHINX_BUILDDIR)"

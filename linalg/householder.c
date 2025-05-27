@@ -72,7 +72,7 @@ gsl_linalg_householder_transform (gsl_vector * v)
         }
       
       alpha = gsl_vector_get (v, 0) ;
-      beta = - (alpha >= 0.0 ? +1.0 : -1.0) * hypot(alpha, xnorm) ;
+      beta = - GSL_SIGN(alpha) * hypot(alpha, xnorm);
       tau = (beta - alpha) / beta ;
       
       {
@@ -88,6 +88,69 @@ gsl_linalg_householder_transform (gsl_vector * v)
             gsl_blas_dscal (GSL_DBL_EPSILON / s, &x.vector);
             gsl_blas_dscal (1.0 / GSL_DBL_EPSILON, &x.vector);
             gsl_vector_set (v, 0, beta) ;
+          }
+      }
+      
+      return tau;
+    }
+}
+
+/*
+gsl_linalg_householder_transform2()
+  Compute a householder transformation P so that
+
+P [   alpha  ] = [ beta ]
+  [ x(1:n-1) ]   [   0  ]
+
+where
+
+P = I - tau [ 1 ] [ 1 v' ]
+            [ v ]
+
+Inputs: alpha - on input, alpha scalar
+                on output, beta scalar
+        v     - length n vector
+                on input, v(1:n-1) contains x vector
+                on output, v(1:n-1) householder vector v
+                v(n) is not modified
+*/
+
+double
+gsl_linalg_householder_transform2 (double * alpha, gsl_vector * v)
+{
+  const size_t n = v->size;
+
+  if (n == 1)
+    {
+      return 0.0; /* tau = 0 */
+    }
+  else
+    { 
+      double beta, tau;
+      gsl_vector_view x = gsl_vector_subvector (v, 0, n - 1); 
+      double xnorm = gsl_blas_dnrm2 (&x.vector);
+      
+      if (xnorm == 0) 
+        {
+          return 0.0; /* tau = 0 */
+        }
+      
+      beta = - GSL_SIGN(*alpha) * hypot(*alpha, xnorm);
+      tau = (beta - *alpha) / beta;
+      
+      {
+        double s = (*alpha - beta);
+        
+        if (fabs(s) > GSL_DBL_MIN) 
+          {
+            gsl_blas_dscal (1.0 / s, &x.vector);
+            *alpha = beta;
+          }
+        else
+          {
+            gsl_blas_dscal (GSL_DBL_EPSILON / s, &x.vector);
+            gsl_blas_dscal (1.0 / GSL_DBL_EPSILON, &x.vector);
+            *alpha = beta;
           }
       }
       
@@ -264,6 +327,108 @@ gsl_linalg_householder_hv (double tau, const gsl_vector * v, gsl_vector * w)
   return GSL_SUCCESS;
 }
 
+/*
+gsl_linalg_householder_left()
+  Apply a Householder reflector
+
+H = I - tau v v^T
+
+to a M-by-N matrix A from the left
+
+Inputs: tau  - Householder coefficient
+        v    - Householder vector, length M
+        A    - (input/output) M-by-N matrix on input; on output, H*A
+        work - workspace, length N
+
+Notes:
+1) This routine replaces gsl_linalg_householder_hm
+*/
+
+int
+gsl_linalg_householder_left(const double tau, const gsl_vector * v, gsl_matrix * A, gsl_vector * work)
+{
+  const size_t M = A->size1;
+  const size_t N = A->size2;
+
+  if (v->size != M)
+    {
+      GSL_ERROR ("matrix must match Householder vector dimensions", GSL_EBADLEN);
+    }
+  else if (work->size != N)
+    {
+      GSL_ERROR ("workspace must match matrix", GSL_EBADLEN);
+    }
+  else
+    {
+      /* quick return */
+      if (tau == 0.0)
+        return GSL_SUCCESS;
+
+      /* work := A^T v */
+      gsl_blas_dgemv(CblasTrans, 1.0, A, v, 0.0, work);
+
+      /* A := A - tau v work^T */
+      gsl_blas_dger(-tau, v, work, A);
+
+      return GSL_SUCCESS;
+    }
+}
+
+/*
+gsl_linalg_householder_right()
+  Apply a Householder reflector
+
+H = I - tau v v^T
+
+to a M-by-N matrix A from the right
+
+Inputs: tau  - Householder coefficient
+        v    - Householder vector, length N
+        A    - (input/output) M-by-N matrix on input; on output, A*H
+        work - workspace, length M
+
+Notes:
+1) v(1) is modified but is restored on output
+
+2) This routine replaces gsl_linalg_householder_mh
+*/
+
+int
+gsl_linalg_householder_right(const double tau, const gsl_vector * v, gsl_matrix * A, gsl_vector * work)
+{
+  const size_t M = A->size1;
+  const size_t N = A->size2;
+
+  if (v->size != N)
+    {
+      GSL_ERROR ("matrix must match Householder vector dimensions", GSL_EBADLEN);
+    }
+  else if (work->size != M)
+    {
+      GSL_ERROR ("workspace must match matrix", GSL_EBADLEN);
+    }
+  else
+    {
+      double v0;
+
+      /* quick return */
+      if (tau == 0.0)
+        return GSL_SUCCESS;
+
+      v0 = gsl_vector_get(v, 0);
+      v->data[0] = 1.0;
+
+      /* work := A v */
+      gsl_blas_dgemv(CblasNoTrans, 1.0, A, v, 0.0, work);
+
+      /* A := A - tau work v^T */
+      gsl_blas_dger(-tau, work, v, A);
+
+      v->data[0] = v0;
+
+      return GSL_SUCCESS;
+    }
+}
 
 int
 gsl_linalg_householder_hm1 (double tau, gsl_matrix * A)
